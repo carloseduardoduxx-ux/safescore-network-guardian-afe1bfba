@@ -20,6 +20,22 @@ const Index = () => {
       <Header />
 
       <main className="container px-4 md:px-6 py-6 space-y-6 max-w-7xl mx-auto">
+        {/* CTA */}
+        <Link
+          to="/register"
+          className="block bg-primary/10 border border-primary/30 rounded-lg p-4 hover:bg-primary/15 transition-colors group"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-foreground text-sm">Realizar Diagnóstico da Sua Empresa</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cadastre sua empresa e receba um relatório completo de vulnerabilidades
+              </p>
+            </div>
+            <ArrowRight size={20} className="text-primary group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+
         {/* Scan Info Bar */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-mono bg-card/50 border border-border rounded-lg px-4 py-3">
           <span className="flex items-center gap-1.5">
