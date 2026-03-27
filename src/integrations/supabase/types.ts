@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      company_scans: {
+        Row: {
+          company_name: string
+          created_at: string
+          critical_count: number | null
+          email: string
+          exposed_emails_count: number | null
+          high_count: number | null
+          id: string
+          it_responsible: string
+          low_count: number | null
+          medium_count: number | null
+          open_ports_count: number | null
+          scan_data: Json | null
+          scan_score: number | null
+          total_vulnerabilities: number | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          critical_count?: number | null
+          email: string
+          exposed_emails_count?: number | null
+          high_count?: number | null
+          id?: string
+          it_responsible: string
+          low_count?: number | null
+          medium_count?: number | null
+          open_ports_count?: number | null
+          scan_data?: Json | null
+          scan_score?: number | null
+          total_vulnerabilities?: number | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          critical_count?: number | null
+          email?: string
+          exposed_emails_count?: number | null
+          high_count?: number | null
+          id?: string
+          it_responsible?: string
+          low_count?: number | null
+          medium_count?: number | null
+          open_ports_count?: number | null
+          scan_data?: Json | null
+          scan_score?: number | null
+          total_vulnerabilities?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
