@@ -1,4 +1,5 @@
-import { Activity, Calendar, Target } from "lucide-react";
+import { Activity, Calendar, Target, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import ScoreGauge from "@/components/ScoreGauge";
 import StatsCards from "@/components/StatsCards";
