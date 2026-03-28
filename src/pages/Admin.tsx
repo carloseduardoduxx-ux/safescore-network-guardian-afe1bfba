@@ -107,13 +107,13 @@ const Admin = () => {
 
   const handleExportPdf = (scan: CompanyScan) => {
     if (!scan.scan_data) return;
-    generatePdfReport({
-      companyName: scan.company_name,
-      itResponsible: scan.it_responsible,
-      email: scan.email,
-      scanDate: scan.created_at,
-      scanData: scan.scan_data,
-    });
+    generatePdfReport(
+      scan.company_name,
+      scan.it_responsible,
+      scan.email,
+      scan.scan_data,
+      scan.created_at,
+    );
   };
 
   return (
