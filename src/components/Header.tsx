@@ -1,20 +1,17 @@
 import { Shield, Bell, Settings, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/safescore-logo.png";
+import logo from "@/assets/compueletro-logo.png";
 
 const Header = () => {
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex items-center justify-between h-16 px-6">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="SafeScore" width={36} height={36} className="drop-shadow-lg" />
+          <img src={logo} alt="Compueletro Soluções" className="h-10 w-auto drop-shadow-lg" />
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground">
               Safe<span className="text-primary text-glow">Score</span>
             </h1>
-            <p className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase">
-              by Compueletro
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
