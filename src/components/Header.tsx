@@ -1,4 +1,5 @@
-import { Shield, Bell, Settings } from "lucide-react";
+import { Shield, Bell, Settings, LayoutDashboard } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/safescore-logo.png";
 
 const Header = () => {
@@ -17,6 +18,9 @@ const Header = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/admin" className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Painel Admin">
+            <LayoutDashboard size={18} />
+          </Link>
           <button className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors">
             <Bell size={18} />
           </button>
