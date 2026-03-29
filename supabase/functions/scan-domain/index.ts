@@ -151,8 +151,47 @@ async function scanSubdomains(domain: string) {
     return [];
   }
 }
+async function scanUrlhaus(domain: string) {
+  try {
+    // Check host against URLhaus database
+    const res = await fetch("https://urlhaus-api.abuse.ch/v1/host/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `host=${encodeURIComponent(domain)}`,
+    });
+    const data = await res.json();
 
-async function getIpInfo(domain: string) {
+    const threatTypes = new Set<string>();
+    const malwareUrls: any[] = [];
+
+    if (data.urls && Array.isArray(data.urls)) {
+      for (const url of data.urls.slice(0, 20)) {
+        if (url.threat) threatTypes.add(url.threat);
+        malwareUrls.push({
+          url: url.url,
+          status: url.url_status,
+          threat: url.threat,
+          tags: url.tags || [],
+          dateAdded: url.date_added,
+        });
+      }
+    }
+
+    return {
+      query_status: data.query_status,
+      urls_online: data.urls_online || 0,
+      urls_total: malwareUrls.length,
+      blacklists: data.blacklists || null,
+      threatTypes: Array.from(threatTypes),
+      urls: malwareUrls,
+    };
+  } catch (e) {
+    console.error("URLhaus error:", e);
+    return null;
+  }
+}
+
+
   try {
     const res = await fetch(`http://ip-api.com/json/${domain}?fields=status,message,query,isp,org,as,country,regionName,city`);
     const data = await res.json();
