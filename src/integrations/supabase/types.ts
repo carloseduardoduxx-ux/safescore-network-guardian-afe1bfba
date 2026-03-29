@@ -19,6 +19,7 @@ export type Database = {
           company_name: string
           created_at: string
           critical_count: number | null
+          domain: string | null
           email: string
           exposed_emails_count: number | null
           high_count: number | null
@@ -35,6 +36,7 @@ export type Database = {
           company_name: string
           created_at?: string
           critical_count?: number | null
+          domain?: string | null
           email: string
           exposed_emails_count?: number | null
           high_count?: number | null
@@ -51,6 +53,7 @@ export type Database = {
           company_name?: string
           created_at?: string
           critical_count?: number | null
+          domain?: string | null
           email?: string
           exposed_emails_count?: number | null
           high_count?: number | null
