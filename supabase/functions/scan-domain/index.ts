@@ -191,7 +191,7 @@ async function scanUrlhaus(domain: string) {
   }
 }
 
-
+async function getIpInfo(domain: string) {
   try {
     const res = await fetch(`http://ip-api.com/json/${domain}?fields=status,message,query,isp,org,as,country,regionName,city`);
     const data = await res.json();
