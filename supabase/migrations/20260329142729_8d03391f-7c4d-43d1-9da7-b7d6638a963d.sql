@@ -1,0 +1,1 @@
+ALTER TABLE public.company_scans ADD COLUMN domain text;
