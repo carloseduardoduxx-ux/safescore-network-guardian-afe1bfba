@@ -13,7 +13,7 @@ import {
   CategoryBarChart,
   CategoryRadarChart,
 } from "@/components/Charts";
-import { FileDown, ArrowLeft, Loader2, Building2, User, Mail } from "lucide-react";
+import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield } from "lucide-react";
 import type { ScanResult } from "@/data/mockScanData";
 import { generatePdfReport } from "@/lib/generatePdf";
 
@@ -22,8 +22,13 @@ interface CompanyScan {
   company_name: string;
   it_responsible: string;
   email: string;
+  domain?: string;
   scan_score: number;
-  scan_data: ScanResult;
+  scan_data: ScanResult & {
+    observatory?: any;
+    subdomains?: string[];
+    ipInfo?: any;
+  };
   created_at: string;
 }
 
@@ -106,7 +111,7 @@ const Report = () => {
         </div>
 
         {/* Company Info */}
-        <div className="bg-card border border-border rounded-lg p-4 grid sm:grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-lg p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex items-center gap-2">
             <Building2 size={16} className="text-primary" />
             <div>
@@ -128,7 +133,90 @@ const Report = () => {
               <p className="text-sm font-medium text-foreground">{scan.email}</p>
             </div>
           </div>
+          {scan.domain && (
+            <div className="flex items-center gap-2">
+              <Globe size={16} className="text-primary" />
+              <div>
+                <p className="text-[10px] text-muted-foreground font-mono uppercase">Domínio</p>
+                <p className="text-sm font-medium text-foreground">{scan.domain}</p>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Observatory & IP Info */}
+        {(scanData as any).observatory && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+                <Shield size={16} className="text-primary" />
+                Mozilla Observatory
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Grade</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {(scanData as any).observatory.grade || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Score</span>
+                  <span className="font-mono text-foreground">
+                    {(scanData as any).observatory.score ?? "N/A"}/100
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Testes passados</span>
+                  <span className="font-mono text-foreground">
+                    {(scanData as any).observatory.tests_passed ?? "N/A"}/{(scanData as any).observatory.tests_quantity ?? "N/A"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {(scanData as any).ipInfo && (
+              <div className="bg-card border border-border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <Server size={16} className="text-primary" />
+                  Informações do Servidor
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">IP</span>
+                    <span className="font-mono text-foreground">{(scanData as any).ipInfo.query}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">ISP</span>
+                    <span className="font-mono text-foreground truncate ml-2">{(scanData as any).ipInfo.isp}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Local</span>
+                    <span className="font-mono text-foreground">
+                      {(scanData as any).ipInfo.city}, {(scanData as any).ipInfo.country}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Subdomains */}
+        {(scanData as any).subdomains?.length > 0 && (
+          <div className="bg-card border border-border rounded-lg p-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+              <Globe size={16} className="text-primary" />
+              Subdomínios Encontrados ({(scanData as any).subdomains.length})
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {(scanData as any).subdomains.map((sub: string) => (
+                <span key={sub} className="text-xs font-mono bg-muted px-2 py-1 rounded border border-border text-muted-foreground">
+                  {sub}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Score + Stats */}
         <div className="grid lg:grid-cols-[auto_1fr] gap-6 items-start">
