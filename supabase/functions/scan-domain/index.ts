@@ -21,6 +21,7 @@ interface ScanResult {
   observatory?: any;
   subdomains?: string[];
   ipInfo?: any;
+  malwareInfo?: any;
 }
 
 async function scanMozillaObservatory(domain: string) {
@@ -162,7 +163,7 @@ async function getIpInfo(domain: string) {
   }
 }
 
-function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[]) {
+function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any) {
   const vulns: any[] = [];
   let vulnIndex = 0;
 
@@ -234,6 +235,36 @@ function buildVulnerabilities(observatory: any, ports: any[], subdomains: string
       affected: "DNS / Certificados",
       status: "open",
     });
+  }
+
+  // From URLhaus malware data
+  if (malwareInfo && malwareInfo.urls_online > 0) {
+    vulns.push({
+      id: `MAL-${String(++vulnIndex).padStart(3, "0")}`,
+      title: "URLs maliciosas ativas detectadas",
+      category: "Malware",
+      severity: "critical",
+      cvss: 9.5,
+      description: `${malwareInfo.urls_online} URL(s) maliciosa(s) ativa(s) associada(s) ao domínio. Tipos de ameaça: ${malwareInfo.threatTypes?.join(", ") || "diversos"}`,
+      affected: "Domínio / Infraestrutura",
+      status: "open",
+    });
+  }
+
+  if (malwareInfo && malwareInfo.blacklists) {
+    const blacklisted = Object.entries(malwareInfo.blacklists).filter(([_, v]: any) => v === "listed");
+    if (blacklisted.length > 0) {
+      vulns.push({
+        id: `BL-${String(++vulnIndex).padStart(3, "0")}`,
+        title: "Domínio em listas negras de segurança",
+        category: "Reputação",
+        severity: "critical",
+        cvss: 9.0,
+        description: `Domínio listado em ${blacklisted.length} blacklist(s): ${blacklisted.map(([k]) => k).join(", ")}`,
+        affected: "Domínio",
+        status: "open",
+      });
+    }
   }
 
   return vulns;
