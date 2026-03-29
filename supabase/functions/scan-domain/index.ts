@@ -31,7 +31,26 @@ async function scanMozillaObservatory(domain: string) {
       `https://http-observatory.security.mozilla.org/api/v1/analyze?host=${domain}`,
       { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "hidden=true&rescan=true" }
     );
-    const initData = await initRes.json();
+
+    const initText = await initRes.text();
+    let initData;
+    try {
+      initData = JSON.parse(initText);
+    } catch {
+      console.warn("Observatory returned non-JSON response, trying v2 API...");
+      // Try Mozilla Observatory v2
+      const v2Res = await fetch(`https://observatory-api.mdn.mozilla.net/api/v2/analyze?host=${domain}`, {
+        method: "POST",
+      });
+      const v2Text = await v2Res.text();
+      try {
+        const v2Data = JSON.parse(v2Text);
+        return { summary: v2Data, tests: v2Data.tests || {} };
+      } catch {
+        console.error("Observatory v2 also returned non-JSON");
+        return null;
+      }
+    }
 
     // If scan is still running, wait and poll
     let result = initData;
@@ -42,7 +61,12 @@ async function scanMozillaObservatory(domain: string) {
       const pollRes = await fetch(
         `https://http-observatory.security.mozilla.org/api/v1/analyze?host=${domain}`
       );
-      result = await pollRes.json();
+      const pollText = await pollRes.text();
+      try {
+        result = JSON.parse(pollText);
+      } catch {
+        break;
+      }
       attempts++;
     }
 
@@ -52,7 +76,12 @@ async function scanMozillaObservatory(domain: string) {
       const testsRes = await fetch(
         `https://http-observatory.security.mozilla.org/api/v1/getScanResults?scan=${result.scan_id}`
       );
-      tests = await testsRes.json();
+      const testsText = await testsRes.text();
+      try {
+        tests = JSON.parse(testsText);
+      } catch {
+        console.warn("Could not parse Observatory test results");
+      }
     }
 
     return { summary: result, tests };
