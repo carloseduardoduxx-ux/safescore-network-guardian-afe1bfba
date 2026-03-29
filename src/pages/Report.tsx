@@ -13,7 +13,7 @@ import {
   CategoryBarChart,
   CategoryRadarChart,
 } from "@/components/Charts";
-import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield } from "lucide-react";
+import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield, Bug, AlertTriangle } from "lucide-react";
 import type { ScanResult } from "@/data/mockScanData";
 import { generatePdfReport } from "@/lib/generatePdf";
 
@@ -215,6 +215,47 @@ const Report = () => {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Malware Info */}
+        {(scanData as any).malwareInfo && (
+          <div className="bg-card border border-border rounded-lg p-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+              <Bug size={16} className="text-destructive" />
+              Análise de Malware (URLhaus)
+            </h3>
+            {(scanData as any).malwareInfo.urls_online > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                  <AlertTriangle size={16} className="text-destructive shrink-0" />
+                  <p className="text-sm text-foreground">
+                    <strong>{(scanData as any).malwareInfo.urls_online}</strong> URL(s) maliciosa(s) ativa(s) detectada(s)
+                  </p>
+                </div>
+                {(scanData as any).malwareInfo.urls?.length > 0 && (
+                  <div className="space-y-2">
+                    {(scanData as any).malwareInfo.urls.slice(0, 10).map((u: any, i: number) => (
+                      <div key={i} className="flex items-start justify-between gap-2 bg-muted/50 rounded p-2 text-xs">
+                        <span className="font-mono text-muted-foreground truncate flex-1">{u.url}</span>
+                        <span className={`shrink-0 px-2 py-0.5 rounded font-mono ${
+                          u.status === "online" ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {u.threat || u.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-success/10 border border-success/30 rounded-lg p-3">
+                <Shield size={16} className="text-success shrink-0" />
+                <p className="text-sm text-foreground">
+                  Nenhuma URL maliciosa encontrada para este domínio
+                </p>
+              </div>
+            )}
           </div>
         )}
 

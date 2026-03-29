@@ -21,6 +21,7 @@ interface ScanResult {
   observatory?: any;
   subdomains?: string[];
   ipInfo?: any;
+  malwareInfo?: any;
 }
 
 async function scanMozillaObservatory(domain: string) {
@@ -150,8 +151,47 @@ async function scanSubdomains(domain: string) {
     return [];
   }
 }
+async function scanUrlhaus(domain: string) {
+  try {
+    // Check host against URLhaus database
+    const res = await fetch("https://urlhaus-api.abuse.ch/v1/host/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `host=${encodeURIComponent(domain)}`,
+    });
+    const data = await res.json();
 
-async function getIpInfo(domain: string) {
+    const threatTypes = new Set<string>();
+    const malwareUrls: any[] = [];
+
+    if (data.urls && Array.isArray(data.urls)) {
+      for (const url of data.urls.slice(0, 20)) {
+        if (url.threat) threatTypes.add(url.threat);
+        malwareUrls.push({
+          url: url.url,
+          status: url.url_status,
+          threat: url.threat,
+          tags: url.tags || [],
+          dateAdded: url.date_added,
+        });
+      }
+    }
+
+    return {
+      query_status: data.query_status,
+      urls_online: data.urls_online || 0,
+      urls_total: malwareUrls.length,
+      blacklists: data.blacklists || null,
+      threatTypes: Array.from(threatTypes),
+      urls: malwareUrls,
+    };
+  } catch (e) {
+    console.error("URLhaus error:", e);
+    return null;
+  }
+}
+
+
   try {
     const res = await fetch(`http://ip-api.com/json/${domain}?fields=status,message,query,isp,org,as,country,regionName,city`);
     const data = await res.json();
@@ -162,7 +202,7 @@ async function getIpInfo(domain: string) {
   }
 }
 
-function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[]) {
+function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any) {
   const vulns: any[] = [];
   let vulnIndex = 0;
 
@@ -236,6 +276,36 @@ function buildVulnerabilities(observatory: any, ports: any[], subdomains: string
     });
   }
 
+  // From URLhaus malware data
+  if (malwareInfo && malwareInfo.urls_online > 0) {
+    vulns.push({
+      id: `MAL-${String(++vulnIndex).padStart(3, "0")}`,
+      title: "URLs maliciosas ativas detectadas",
+      category: "Malware",
+      severity: "critical",
+      cvss: 9.5,
+      description: `${malwareInfo.urls_online} URL(s) maliciosa(s) ativa(s) associada(s) ao domínio. Tipos de ameaça: ${malwareInfo.threatTypes?.join(", ") || "diversos"}`,
+      affected: "Domínio / Infraestrutura",
+      status: "open",
+    });
+  }
+
+  if (malwareInfo && malwareInfo.blacklists) {
+    const blacklisted = Object.entries(malwareInfo.blacklists).filter(([_, v]: any) => v === "listed");
+    if (blacklisted.length > 0) {
+      vulns.push({
+        id: `BL-${String(++vulnIndex).padStart(3, "0")}`,
+        title: "Domínio em listas negras de segurança",
+        category: "Reputação",
+        severity: "critical",
+        cvss: 9.0,
+        description: `Domínio listado em ${blacklisted.length} blacklist(s): ${blacklisted.map(([k]) => k).join(", ")}`,
+        affected: "Domínio",
+        status: "open",
+      });
+    }
+  }
+
   return vulns;
 }
 
@@ -279,16 +349,17 @@ serve(async (req) => {
     console.log(`Starting scan for: ${cleanDomain}`);
 
     // Run all scans in parallel
-    const [observatory, ports, subdomains, ipInfo] = await Promise.all([
+    const [observatory, ports, subdomains, ipInfo, malwareInfo] = await Promise.all([
       scanMozillaObservatory(cleanDomain),
       scanPortsHackerTarget(cleanDomain),
       scanSubdomains(cleanDomain),
       getIpInfo(cleanDomain),
+      scanUrlhaus(cleanDomain),
     ]);
 
-    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}`);
+    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}`);
 
-    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains);
+    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo);
 
     const criticalCount = vulnerabilities.filter((v: any) => v.severity === "critical").length;
     const highCount = vulnerabilities.filter((v: any) => v.severity === "high").length;
@@ -305,13 +376,14 @@ serve(async (req) => {
       mediumCount,
       lowCount,
       openPorts: ports,
-      exposedEmails: [], // Would need HIBP API key for real email checks
+      exposedEmails: [],
       vulnerabilities,
       scanDate: new Date().toISOString(),
       targetNetwork: cleanDomain,
       observatory: observatory?.summary || null,
       subdomains,
       ipInfo,
+      malwareInfo,
     };
 
     return new Response(JSON.stringify(result), {
