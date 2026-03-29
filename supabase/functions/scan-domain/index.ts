@@ -359,7 +359,7 @@ serve(async (req) => {
 
     console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}`);
 
-    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains);
+    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo);
 
     const criticalCount = vulnerabilities.filter((v: any) => v.severity === "critical").length;
     const highCount = vulnerabilities.filter((v: any) => v.severity === "high").length;
@@ -376,13 +376,14 @@ serve(async (req) => {
       mediumCount,
       lowCount,
       openPorts: ports,
-      exposedEmails: [], // Would need HIBP API key for real email checks
+      exposedEmails: [],
       vulnerabilities,
       scanDate: new Date().toISOString(),
       targetNetwork: cleanDomain,
       observatory: observatory?.summary || null,
       subdomains,
       ipInfo,
+      malwareInfo,
     };
 
     return new Response(JSON.stringify(result), {
