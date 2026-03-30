@@ -68,6 +68,115 @@ export type Database = {
         }
         Relationships: []
       }
+      network_devices: {
+        Row: {
+          company_name: string
+          created_at: string
+          device_type: string | null
+          hostname: string | null
+          id: string
+          ip_address: string
+          last_seen: string | null
+          mac_address: string | null
+          open_ports: Json | null
+          os_detected: string | null
+          os_version: string | null
+          risk_level: string | null
+          scan_id: string | null
+          status: string | null
+          vulnerabilities: Json | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          device_type?: string | null
+          hostname?: string | null
+          id?: string
+          ip_address: string
+          last_seen?: string | null
+          mac_address?: string | null
+          open_ports?: Json | null
+          os_detected?: string | null
+          os_version?: string | null
+          risk_level?: string | null
+          scan_id?: string | null
+          status?: string | null
+          vulnerabilities?: Json | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          device_type?: string | null
+          hostname?: string | null
+          id?: string
+          ip_address?: string
+          last_seen?: string | null
+          mac_address?: string | null
+          open_ports?: Json | null
+          os_detected?: string | null
+          os_version?: string | null
+          risk_level?: string | null
+          scan_id?: string | null
+          status?: string | null
+          vulnerabilities?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_devices_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "company_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_scans: {
+        Row: {
+          agent_version: string | null
+          company_name: string
+          created_at: string
+          critical_devices: number | null
+          id: string
+          network_range: string | null
+          scan_id: string | null
+          scan_status: string | null
+          total_devices: number | null
+          total_vulnerabilities: number | null
+        }
+        Insert: {
+          agent_version?: string | null
+          company_name: string
+          created_at?: string
+          critical_devices?: number | null
+          id?: string
+          network_range?: string | null
+          scan_id?: string | null
+          scan_status?: string | null
+          total_devices?: number | null
+          total_vulnerabilities?: number | null
+        }
+        Update: {
+          agent_version?: string | null
+          company_name?: string
+          created_at?: string
+          critical_devices?: number | null
+          id?: string
+          network_range?: string | null
+          scan_id?: string | null
+          scan_status?: string | null
+          total_devices?: number | null
+          total_vulnerabilities?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_scans_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "company_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

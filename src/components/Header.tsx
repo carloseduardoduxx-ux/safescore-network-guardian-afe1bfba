@@ -1,4 +1,4 @@
-import { Shield, Bell, Settings, LayoutDashboard, LogOut } from "lucide-react";
+import { Shield, Bell, Settings, LayoutDashboard, LogOut, Wifi } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -36,6 +36,9 @@ const Header = () => {
         <div className="flex items-center gap-2">
           <Link to="/admin" className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Painel Admin">
             <LayoutDashboard size={18} />
+          </Link>
+          <Link to="/network" className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="Inventário de Rede">
+            <Wifi size={18} />
           </Link>
           <button className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors">
             <Bell size={18} />
