@@ -8,6 +8,7 @@ import Register from "./pages/Register.tsx";
 import Report from "./pages/Report.tsx";
 import Admin from "./pages/Admin.tsx";
 import Login from "./pages/Login.tsx";
+import NetworkInventory from "./pages/NetworkInventory.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
@@ -25,6 +26,8 @@ const App = () => (
           <Route path="/report/:id" element={<Report />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="/network" element={<ProtectedRoute><NetworkInventory /></ProtectedRoute>} />
+          <Route path="/network/:scanId" element={<ProtectedRoute><NetworkInventory /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
