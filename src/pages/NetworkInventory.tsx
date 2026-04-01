@@ -174,11 +174,10 @@ const NetworkInventory = () => {
               <p className="font-semibold text-foreground text-sm">⚡ Opção 1 — Executável pronto (recomendado)</p>
               <p>Baixe o <code className="bg-muted px-1 rounded font-mono">SafeScoreAgent.exe</code> direto da página de Releases — não precisa instalar Python.</p>
               <div className="flex items-center gap-2">
-                <a href="https://github.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">
-                  → Acessar Releases no GitHub
+                <a href="https://github.com/carloseduardoduxx-ux/safescore-network-guardian-afe1bfba/releases" target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">
+                  → Baixar SafeScoreAgent.exe (Releases)
                 </a>
               </div>
-              <p className="text-[10px] text-muted-foreground">* Atualize o link acima com a URL do seu repositório GitHub.</p>
             </div>
 
             <div className="border border-border rounded-lg p-3 space-y-2 mt-2">
