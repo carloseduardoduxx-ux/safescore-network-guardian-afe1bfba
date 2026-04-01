@@ -169,17 +169,31 @@ const NetworkInventory = () => {
             <Terminal size={16} className="text-primary" />
             Como usar o Agente Local
           </h3>
-          <div className="space-y-2 text-xs text-muted-foreground font-mono">
-            <p>1. Baixe o arquivo <code className="bg-muted px-1 rounded">safescore-agent.py</code></p>
-            <p>2. Instale as dependências: <code className="bg-muted px-1 rounded">pip install requests</code></p>
-            <p>3. Execute com privilégios de administrador:</p>
-            <div className="flex items-center gap-2 bg-muted/50 rounded p-2">
-              <code className="flex-1 text-foreground">
-                sudo python3 safescore-agent.py --company "Nome da Empresa" --range 192.168.1.0/24
-              </code>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopyCommand}>
-                <Copy size={12} />
-              </Button>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+              <p className="font-semibold text-foreground text-sm">⚡ Opção 1 — Executável pronto (recomendado)</p>
+              <p>Baixe o <code className="bg-muted px-1 rounded font-mono">SafeScoreAgent.exe</code> direto da página de Releases — não precisa instalar Python.</p>
+              <div className="flex items-center gap-2">
+                <a href="https://github.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs">
+                  → Acessar Releases no GitHub
+                </a>
+              </div>
+              <p className="text-[10px] text-muted-foreground">* Atualize o link acima com a URL do seu repositório GitHub.</p>
+            </div>
+
+            <div className="border border-border rounded-lg p-3 space-y-2 mt-2">
+              <p className="font-semibold text-foreground text-sm">🐍 Opção 2 — Script Python</p>
+              <p className="font-mono">1. Baixe <code className="bg-muted px-1 rounded">safescore-agent.py</code></p>
+              <p className="font-mono">2. Instale: <code className="bg-muted px-1 rounded">pip install requests</code></p>
+              <p className="font-mono">3. Execute como administrador:</p>
+              <div className="flex items-center gap-2 bg-muted/50 rounded p-2">
+                <code className="flex-1 text-foreground font-mono text-xs">
+                  sudo python3 safescore-agent.py --company "Nome da Empresa" --range 192.168.1.0/24
+                </code>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopyCommand}>
+                  <Copy size={12} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

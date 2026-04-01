@@ -1,0 +1,43 @@
+name: Build SafeScore Agent (.exe)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'public/safescore-agent.py'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests nuitka ordered-set zstandard
+
+      - name: Build .exe with Nuitka
+        run: |
+          python -m nuitka --onefile --output-filename=SafeScoreAgent.exe --output-dir=dist --remove-output --assume-yes-for-downloads --include-module=requests --include-module=socket --include-module=json --include-module=subprocess --include-module=platform public/safescore-agent.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeScoreAgent
+          path: dist/SafeScoreAgent.exe
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: agent-v${{ github.run_number }}
+          name: SafeScore Agent Build ${{ github.run_number }}
+          files: dist/SafeScoreAgent.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
