@@ -22,6 +22,7 @@ interface ScanResult {
   subdomains?: string[];
   ipInfo?: any;
   malwareInfo?: any;
+  sslInfo?: any;
 }
 
 async function scanMozillaObservatory(domain: string) {
@@ -220,6 +221,81 @@ async function scanUrlhaus(domain: string) {
   }
 }
 
+async function scanSslLabs(domain: string) {
+  try {
+    // Start analysis (fromCache=on to avoid long waits, startNew=off)
+    const startRes = await fetch(
+      `https://api.ssllabs.com/api/v3/analyze?host=${domain}&fromCache=on&all=done`
+    );
+    const startText = await startRes.text();
+    let data;
+    try {
+      data = JSON.parse(startText);
+    } catch {
+      console.warn("SSL Labs returned non-JSON");
+      return null;
+    }
+
+    // Poll if still in progress (max ~60s)
+    let attempts = 0;
+    while (data.status === "IN_PROGRESS" || data.status === "DNS") {
+      if (attempts > 12) break;
+      await new Promise((r) => setTimeout(r, 5000));
+      const pollRes = await fetch(
+        `https://api.ssllabs.com/api/v3/analyze?host=${domain}&fromCache=on&all=done`
+      );
+      const pollText = await pollRes.text();
+      try {
+        data = JSON.parse(pollText);
+      } catch {
+        break;
+      }
+      attempts++;
+    }
+
+    if (data.status !== "READY" || !data.endpoints?.length) {
+      console.warn("SSL Labs scan not ready:", data.status);
+      return { status: data.status, grade: null, endpoints: [] };
+    }
+
+    const endpoints = data.endpoints.map((ep: any) => ({
+      ipAddress: ep.ipAddress,
+      grade: ep.grade || "N/A",
+      gradeTrustIgnored: ep.gradeTrustIgnored || "N/A",
+      hasWarnings: ep.hasWarnings || false,
+      isExceptional: ep.isExceptional || false,
+      progress: ep.progress,
+      details: ep.details ? {
+        protocols: ep.details.protocols?.map((p: any) => ({ name: p.name, version: p.version })) || [],
+        vulnBeast: ep.details.vulnBeast || false,
+        heartbleed: ep.details.heartbleed || false,
+        poodle: ep.details.poodle || false,
+        poodleTls: ep.details.poodleTls || 0,
+        freak: ep.details.freak || false,
+        logjam: ep.details.logjam || false,
+        drownVulnerable: ep.details.drownVulnerable || false,
+        forwardSecrecy: ep.details.forwardSecrecy || 0,
+        certExpiresIn: ep.details.cert?.notAfter
+          ? Math.round((ep.details.cert.notAfter - Date.now()) / (1000 * 60 * 60 * 24))
+          : null,
+        certIssuer: ep.details.cert?.issuerLabel || null,
+        certSigAlg: ep.details.cert?.sigAlg || null,
+      } : null,
+    }));
+
+    const bestGrade = endpoints[0]?.grade || "N/A";
+
+    return {
+      status: data.status,
+      grade: bestGrade,
+      endpoints,
+    };
+  } catch (e) {
+    console.error("SSL Labs error:", e);
+    return null;
+  }
+}
+
 async function getIpInfo(domain: string) {
   try {
     const res = await fetch(`http://ip-api.com/json/${domain}?fields=status,message,query,isp,org,as,country,regionName,city`);
@@ -231,7 +307,7 @@ async function getIpInfo(domain: string) {
   }
 }
 
-function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any) {
+function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any, sslInfo?: any) {
   const vulns: any[] = [];
   let vulnIndex = 0;
 
@@ -335,6 +411,29 @@ function buildVulnerabilities(observatory: any, ports: any[], subdomains: string
     }
   }
 
+  // From SSL Labs
+  if (sslInfo?.endpoints?.length) {
+    for (const ep of sslInfo.endpoints) {
+      if (ep.grade && ["F", "T"].includes(ep.grade)) {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Certificado SSL/TLS com nota crítica", category: "Criptografia", severity: "critical", cvss: 9.0, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      } else if (ep.grade && ["D", "E"].includes(ep.grade[0])) {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Configuração SSL/TLS insegura", category: "Criptografia", severity: "high", cvss: 7.5, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      } else if (ep.grade && ep.grade[0] === "C") {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "SSL/TLS com melhorias necessárias", category: "Criptografia", severity: "medium", cvss: 5.0, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      }
+      if (ep.details) {
+        if (ep.details.heartbleed) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Heartbleed detectado", category: "Criptografia", severity: "critical", cvss: 9.8, description: "CVE-2014-0160", affected: ep.ipAddress, status: "open" });
+        if (ep.details.poodle) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "POODLE detectado", category: "Criptografia", severity: "high", cvss: 7.5, description: "Ataque via SSLv3", affected: ep.ipAddress, status: "open" });
+        if (ep.details.freak) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "FREAK detectado", category: "Criptografia", severity: "high", cvss: 7.0, description: "Downgrade criptografia exportação", affected: ep.ipAddress, status: "open" });
+        if (ep.details.logjam) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Logjam detectado", category: "Criptografia", severity: "high", cvss: 7.0, description: "Downgrade Diffie-Hellman", affected: ep.ipAddress, status: "open" });
+        if (ep.details.drownVulnerable) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "DROWN detectado", category: "Criptografia", severity: "critical", cvss: 9.0, description: "Decriptação via SSLv2", affected: ep.ipAddress, status: "open" });
+        if (ep.details.certExpiresIn != null && ep.details.certExpiresIn < 30) {
+          vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: ep.details.certExpiresIn <= 0 ? "Certificado SSL expirado" : "Certificado SSL expirando", category: "Criptografia", severity: ep.details.certExpiresIn <= 0 ? "critical" : "medium", cvss: ep.details.certExpiresIn <= 0 ? 9.0 : 5.0, description: ep.details.certExpiresIn <= 0 ? "Expirado" : `Expira em ${ep.details.certExpiresIn} dias`, affected: ep.ipAddress, status: "open" });
+        }
+      }
+    }
+  }
+
   return vulns;
 }
 
@@ -378,17 +477,18 @@ serve(async (req) => {
     console.log(`Starting scan for: ${cleanDomain}`);
 
     // Run all scans in parallel
-    const [observatory, ports, subdomains, ipInfo, malwareInfo] = await Promise.all([
+    const [observatory, ports, subdomains, ipInfo, malwareInfo, sslInfo] = await Promise.all([
       scanMozillaObservatory(cleanDomain),
       scanPortsHackerTarget(cleanDomain),
       scanSubdomains(cleanDomain),
       getIpInfo(cleanDomain),
       scanUrlhaus(cleanDomain),
+      scanSslLabs(cleanDomain),
     ]);
 
-    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}`);
+    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}, SSL: ${sslInfo ? "OK" : "failed"}`);
 
-    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo);
+    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo, sslInfo);
 
     const criticalCount = vulnerabilities.filter((v: any) => v.severity === "critical").length;
     const highCount = vulnerabilities.filter((v: any) => v.severity === "high").length;
@@ -413,6 +513,7 @@ serve(async (req) => {
       subdomains,
       ipInfo,
       malwareInfo,
+      sslInfo,
     };
 
     return new Response(JSON.stringify(result), {

@@ -13,7 +13,7 @@ import {
   CategoryBarChart,
   CategoryRadarChart,
 } from "@/components/Charts";
-import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield, Bug, AlertTriangle } from "lucide-react";
+import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield, Bug, AlertTriangle, Lock, CheckCircle } from "lucide-react";
 import type { ScanResult } from "@/data/mockScanData";
 import { generatePdfReport } from "@/lib/generatePdf";
 
@@ -215,6 +215,96 @@ const Report = () => {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* SSL/TLS Info */}
+        {(scanData as any).sslInfo && (scanData as any).sslInfo.grade && (
+          <div className="bg-card border border-border rounded-lg p-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+              <Lock size={16} className="text-primary" />
+              Análise SSL/TLS (SSL Labs)
+            </h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase mb-1">Nota Geral</p>
+                <p className={`text-2xl font-bold font-mono ${
+                  (scanData as any).sslInfo.grade === "A+" || (scanData as any).sslInfo.grade === "A" ? "text-green-500" :
+                  (scanData as any).sslInfo.grade === "B" ? "text-yellow-500" :
+                  (scanData as any).sslInfo.grade === "C" ? "text-orange-500" :
+                  "text-destructive"
+                }`}>
+                  {(scanData as any).sslInfo.grade}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase mb-1">Endpoints</p>
+                <p className="text-2xl font-bold font-mono text-foreground">
+                  {(scanData as any).sslInfo.endpoints?.length || 0}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase mb-1">Status</p>
+                <p className="text-sm font-mono text-foreground mt-1">
+                  {(scanData as any).sslInfo.status || "N/A"}
+                </p>
+              </div>
+            </div>
+
+            {(scanData as any).sslInfo.endpoints?.map((ep: any, i: number) => (
+              <div key={i} className="bg-muted/30 border border-border rounded-lg p-3 mb-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono text-muted-foreground">{ep.ipAddress}</span>
+                  <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded ${
+                    ep.grade === "A+" || ep.grade === "A" ? "bg-green-500/20 text-green-500" :
+                    ep.grade === "B" ? "bg-yellow-500/20 text-yellow-500" :
+                    "bg-destructive/20 text-destructive"
+                  }`}>
+                    {ep.grade}
+                  </span>
+                </div>
+                {ep.details && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    {ep.details.protocols?.length > 0 && (
+                      <div>
+                        <p className="text-muted-foreground">Protocolos</p>
+                        <p className="font-mono text-foreground">{ep.details.protocols.map((p: any) => `${p.name} ${p.version}`).join(", ")}</p>
+                      </div>
+                    )}
+                    {ep.details.certIssuer && (
+                      <div>
+                        <p className="text-muted-foreground">Emissor</p>
+                        <p className="font-mono text-foreground truncate">{ep.details.certIssuer}</p>
+                      </div>
+                    )}
+                    {ep.details.certExpiresIn != null && (
+                      <div>
+                        <p className="text-muted-foreground">Expira em</p>
+                        <p className={`font-mono ${ep.details.certExpiresIn <= 30 ? "text-destructive" : "text-foreground"}`}>
+                          {ep.details.certExpiresIn <= 0 ? "Expirado!" : `${ep.details.certExpiresIn} dias`}
+                        </p>
+                      </div>
+                    )}
+                    <div className="col-span-2 sm:col-span-3 flex flex-wrap gap-2 mt-1">
+                      {[
+                        { label: "Heartbleed", val: ep.details.heartbleed },
+                        { label: "POODLE", val: ep.details.poodle },
+                        { label: "FREAK", val: ep.details.freak },
+                        { label: "Logjam", val: ep.details.logjam },
+                        { label: "DROWN", val: ep.details.drownVulnerable },
+                      ].map((v) => (
+                        <span key={v.label} className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                          v.val ? "bg-destructive/20 text-destructive" : "bg-green-500/10 text-green-500"
+                        }`}>
+                          {v.val ? <AlertTriangle size={10} /> : <CheckCircle size={10} />}
+                          {v.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
