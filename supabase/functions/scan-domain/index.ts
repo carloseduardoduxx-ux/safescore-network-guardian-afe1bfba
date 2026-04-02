@@ -454,17 +454,18 @@ serve(async (req) => {
     console.log(`Starting scan for: ${cleanDomain}`);
 
     // Run all scans in parallel
-    const [observatory, ports, subdomains, ipInfo, malwareInfo] = await Promise.all([
+    const [observatory, ports, subdomains, ipInfo, malwareInfo, sslInfo] = await Promise.all([
       scanMozillaObservatory(cleanDomain),
       scanPortsHackerTarget(cleanDomain),
       scanSubdomains(cleanDomain),
       getIpInfo(cleanDomain),
       scanUrlhaus(cleanDomain),
+      scanSslLabs(cleanDomain),
     ]);
 
-    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}`);
+    console.log(`Scan complete. Observatory: ${observatory ? "OK" : "failed"}, Ports: ${ports.length}, Subdomains: ${subdomains.length}, Malware: ${malwareInfo ? "OK" : "failed"}, SSL: ${sslInfo ? "OK" : "failed"}`);
 
-    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo);
+    const vulnerabilities = buildVulnerabilities(observatory, ports, subdomains, malwareInfo, sslInfo);
 
     const criticalCount = vulnerabilities.filter((v: any) => v.severity === "critical").length;
     const highCount = vulnerabilities.filter((v: any) => v.severity === "high").length;
