@@ -221,6 +221,81 @@ async function scanUrlhaus(domain: string) {
   }
 }
 
+async function scanSslLabs(domain: string) {
+  try {
+    // Start analysis (fromCache=on to avoid long waits, startNew=off)
+    const startRes = await fetch(
+      `https://api.ssllabs.com/api/v3/analyze?host=${domain}&fromCache=on&all=done`
+    );
+    const startText = await startRes.text();
+    let data;
+    try {
+      data = JSON.parse(startText);
+    } catch {
+      console.warn("SSL Labs returned non-JSON");
+      return null;
+    }
+
+    // Poll if still in progress (max ~60s)
+    let attempts = 0;
+    while (data.status === "IN_PROGRESS" || data.status === "DNS") {
+      if (attempts > 12) break;
+      await new Promise((r) => setTimeout(r, 5000));
+      const pollRes = await fetch(
+        `https://api.ssllabs.com/api/v3/analyze?host=${domain}&fromCache=on&all=done`
+      );
+      const pollText = await pollRes.text();
+      try {
+        data = JSON.parse(pollText);
+      } catch {
+        break;
+      }
+      attempts++;
+    }
+
+    if (data.status !== "READY" || !data.endpoints?.length) {
+      console.warn("SSL Labs scan not ready:", data.status);
+      return { status: data.status, grade: null, endpoints: [] };
+    }
+
+    const endpoints = data.endpoints.map((ep: any) => ({
+      ipAddress: ep.ipAddress,
+      grade: ep.grade || "N/A",
+      gradeTrustIgnored: ep.gradeTrustIgnored || "N/A",
+      hasWarnings: ep.hasWarnings || false,
+      isExceptional: ep.isExceptional || false,
+      progress: ep.progress,
+      details: ep.details ? {
+        protocols: ep.details.protocols?.map((p: any) => ({ name: p.name, version: p.version })) || [],
+        vulnBeast: ep.details.vulnBeast || false,
+        heartbleed: ep.details.heartbleed || false,
+        poodle: ep.details.poodle || false,
+        poodleTls: ep.details.poodleTls || 0,
+        freak: ep.details.freak || false,
+        logjam: ep.details.logjam || false,
+        drownVulnerable: ep.details.drownVulnerable || false,
+        forwardSecrecy: ep.details.forwardSecrecy || 0,
+        certExpiresIn: ep.details.cert?.notAfter
+          ? Math.round((ep.details.cert.notAfter - Date.now()) / (1000 * 60 * 60 * 24))
+          : null,
+        certIssuer: ep.details.cert?.issuerLabel || null,
+        certSigAlg: ep.details.cert?.sigAlg || null,
+      } : null,
+    }));
+
+    const bestGrade = endpoints[0]?.grade || "N/A";
+
+    return {
+      status: data.status,
+      grade: bestGrade,
+      endpoints,
+    };
+  } catch (e) {
+    console.error("SSL Labs error:", e);
+    return null;
+  }
+}
+
 async function getIpInfo(domain: string) {
   try {
     const res = await fetch(`http://ip-api.com/json/${domain}?fields=status,message,query,isp,org,as,country,regionName,city`);
