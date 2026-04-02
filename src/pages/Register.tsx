@@ -12,6 +12,7 @@ const SCAN_STEPS = [
   "Escaneando portas abertas (Nmap)...",
   "Buscando subdomínios (Certificate Transparency)...",
   "Verificando malware e URLs maliciosas (URLhaus)...",
+  "Analisando certificado SSL/TLS (SSL Labs)...",
   "Coletando informações de IP...",
   "Consolidando resultados...",
 ];

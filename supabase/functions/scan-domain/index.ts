@@ -490,6 +490,7 @@ serve(async (req) => {
       subdomains,
       ipInfo,
       malwareInfo,
+      sslInfo,
     };
 
     return new Response(JSON.stringify(result), {
