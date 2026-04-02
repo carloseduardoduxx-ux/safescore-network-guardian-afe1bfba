@@ -307,7 +307,7 @@ async function getIpInfo(domain: string) {
   }
 }
 
-function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any) {
+function buildVulnerabilities(observatory: any, ports: any[], subdomains: string[], malwareInfo: any, sslInfo?: any) {
   const vulns: any[] = [];
   let vulnIndex = 0;
 
