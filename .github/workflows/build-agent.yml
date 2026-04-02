@@ -6,6 +6,9 @@ on:
     paths:
       - 'public/safescore-agent.py'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
