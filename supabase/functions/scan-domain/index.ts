@@ -411,6 +411,29 @@ function buildVulnerabilities(observatory: any, ports: any[], subdomains: string
     }
   }
 
+  // From SSL Labs
+  if (sslInfo?.endpoints?.length) {
+    for (const ep of sslInfo.endpoints) {
+      if (ep.grade && ["F", "T"].includes(ep.grade)) {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Certificado SSL/TLS com nota crítica", category: "Criptografia", severity: "critical", cvss: 9.0, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      } else if (ep.grade && ["D", "E"].includes(ep.grade[0])) {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Configuração SSL/TLS insegura", category: "Criptografia", severity: "high", cvss: 7.5, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      } else if (ep.grade && ep.grade[0] === "C") {
+        vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "SSL/TLS com melhorias necessárias", category: "Criptografia", severity: "medium", cvss: 5.0, description: `SSL Labs nota ${ep.grade} - ${ep.ipAddress}`, affected: ep.ipAddress, status: "open" });
+      }
+      if (ep.details) {
+        if (ep.details.heartbleed) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Heartbleed detectado", category: "Criptografia", severity: "critical", cvss: 9.8, description: "CVE-2014-0160", affected: ep.ipAddress, status: "open" });
+        if (ep.details.poodle) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "POODLE detectado", category: "Criptografia", severity: "high", cvss: 7.5, description: "Ataque via SSLv3", affected: ep.ipAddress, status: "open" });
+        if (ep.details.freak) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "FREAK detectado", category: "Criptografia", severity: "high", cvss: 7.0, description: "Downgrade criptografia exportação", affected: ep.ipAddress, status: "open" });
+        if (ep.details.logjam) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "Logjam detectado", category: "Criptografia", severity: "high", cvss: 7.0, description: "Downgrade Diffie-Hellman", affected: ep.ipAddress, status: "open" });
+        if (ep.details.drownVulnerable) vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: "DROWN detectado", category: "Criptografia", severity: "critical", cvss: 9.0, description: "Decriptação via SSLv2", affected: ep.ipAddress, status: "open" });
+        if (ep.details.certExpiresIn != null && ep.details.certExpiresIn < 30) {
+          vulns.push({ id: `SSL-${String(++vulnIndex).padStart(3, "0")}`, title: ep.details.certExpiresIn <= 0 ? "Certificado SSL expirado" : "Certificado SSL expirando", category: "Criptografia", severity: ep.details.certExpiresIn <= 0 ? "critical" : "medium", cvss: ep.details.certExpiresIn <= 0 ? 9.0 : 5.0, description: ep.details.certExpiresIn <= 0 ? "Expirado" : `Expira em ${ep.details.certExpiresIn} dias`, affected: ep.ipAddress, status: "open" });
+        }
+      }
+    }
+  }
+
   return vulns;
 }
 
