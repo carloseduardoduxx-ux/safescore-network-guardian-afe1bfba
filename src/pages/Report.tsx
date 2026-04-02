@@ -13,7 +13,7 @@ import {
   CategoryBarChart,
   CategoryRadarChart,
 } from "@/components/Charts";
-import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield, Bug, AlertTriangle } from "lucide-react";
+import { FileDown, ArrowLeft, Loader2, Building2, User, Mail, Globe, Server, Shield, Bug, AlertTriangle, Lock, CheckCircle } from "lucide-react";
 import type { ScanResult } from "@/data/mockScanData";
 import { generatePdfReport } from "@/lib/generatePdf";
 
