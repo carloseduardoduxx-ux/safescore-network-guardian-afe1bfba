@@ -22,6 +22,7 @@ interface ScanResult {
   subdomains?: string[];
   ipInfo?: any;
   malwareInfo?: any;
+  sslInfo?: any;
 }
 
 async function scanMozillaObservatory(domain: string) {
